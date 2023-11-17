@@ -1,4 +1,3 @@
-
 FLAGS=-O3 -lssl -lcrypto
 
 CC=gcc
@@ -10,7 +9,7 @@ EXEC=password_bf
 all: $(EXEC)
 
 $(EXEC):
-	gcc -o password_bf password_bf.c -lcrypto -I/opt/homebrew/opt/openssl/include -L/opt/homebrew/opt/openssl/lib
+	clang -o password_bf password_bf.c -fopenmp -lcrypto -I/opt/homebrew/opt/openssl/include -L/opt/homebrew/opt/openssl/lib
 
 run:
 	./$(EXEC)

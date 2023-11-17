@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <openssl/md5.h>
 #include <string.h>
+#include <omp.h>
 
 #define MAX 10
 
@@ -25,17 +26,18 @@ void print_digest(byte * hash){
  * This procedure generate all combinations of possible letters
 */
 void iterate(byte * hash1, byte * hash2, char *str, int idx, int len, int *ok) {
-    printf("iterating string = %s, int = %d, length = %d, ok = %d\n", str, idx, len, *ok);
     int c;
     // 'ok' determines when the algorithm matches.
     if(*ok) return;
     if (idx < (len - 1)) {
+        
         // Iterate for all letter combination.
         for (c = 0; c < strlen(letters) && *ok==0; ++c) {
             str[idx] = letters[c];
             // Recursive call
             iterate(hash1, hash2, str, idx + 1, len, ok);
         }
+        //printf("iterating string = %s, idx = %d, length = %d, ok = %d\n", str, idx, len, *ok);
     } else {
         // Include all last letters and compare the hashes.
         for (c = 0; c < strlen(letters) && *ok==0; ++c) {
@@ -43,7 +45,7 @@ void iterate(byte * hash1, byte * hash2, char *str, int idx, int len, int *ok) {
             MD5((byte *) str, strlen(str), hash2);
             if(strncmp((char*)hash1, (char*)hash2, MD5_DIGEST_LENGTH) == 0){
                 printf("found: %s\n", str);
-                //print_digest(hash2);
+                print_digest(hash2);
                 *ok = 1;
             }
         }
@@ -74,7 +76,7 @@ int main(int argc, char **argv) {
 
     // Input:
     r = scanf("%s", hash1_str);
-
+    printf("%s\n", hash1_str);
     // Check input.
     if (r == EOF || r == 0)
     {
@@ -84,14 +86,16 @@ int main(int argc, char **argv) {
 
     // Convert hexadecimal string to hash byte.
     strHex_to_byte(hash1_str, hash1);
-    
+    print_digest(hash1);
+    printf("%d\n", MD5_DIGEST_LENGTH);
     memset(hash2, 0, MD5_DIGEST_LENGTH);
     //print_digest(hash1);
     // Generate all possible passwords of different sizes.
     printf("LenMax: %d\n", lenMax);
     //MARK: tentar jogar o paralel for aqui
+#pragma omp for
     for(len = 1; len <= lenMax; len++){
-        printf("lenght = %d\n", len);
+        //printf("lenght = %d\n", len);
         //copia a string pra memoria se nao me engano
         memset(str, 0, len+1);
         
