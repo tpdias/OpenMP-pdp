@@ -9,7 +9,7 @@ EXEC=password_bf
 all: $(EXEC)
 
 $(EXEC):
-	clang -o password_bf password_bf.c -fopenmp -lcrypto -I/opt/homebrew/opt/openssl/include -L/opt/homebrew/opt/openssl/lib
+	clang -pg -o password_bf password_bf.c -fopenmp -lomp -lcrypto -I/opt/homebrew/opt/openssl/include -L/opt/homebrew/opt/openssl/lib
 
 run:
 	./$(EXEC)
