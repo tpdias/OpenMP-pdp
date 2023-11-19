@@ -31,8 +31,7 @@ void iterate(byte * hash1, byte * hash2, char *str, int idx, int len, int *ok) {
     // 'ok' determines when the algorithm matches.
     if(*ok) return;
     if (idx < (len - 1)) {
-#pragma omp parallel num_threads(16) firstprivate(hash1, hash2, idx, len)
-        {
+
             // Iterate for all letter combination.
         for (c = 0; c < strlen(letters) && !(*ok); ++c) {
                      char *local_str = (char *)malloc((MAX + 1) * sizeof(char));
@@ -46,7 +45,7 @@ void iterate(byte * hash1, byte * hash2, char *str, int idx, int len, int *ok) {
                      free(local_str);
                  }
               }
-            }
+            
     } else {
         // Include all last letters and compare the hashes.
         //#pragma omp for
@@ -109,13 +108,15 @@ int main(int argc, char **argv) {
     
     double start_time = omp_get_wtime();
    
-
+#pragma omp parallel firstprivate(len, str, hash1, hash2) num_threads(16)
+    {
+#pragma omp for
         for(len = 1; len <= lenMax; len++){
             memset(str, 0, len+1);
             iterate(hash1, hash2, str, 0, len, &ok);
             
         }
-    
+    }
     
     double end_time = omp_get_wtime();
        printf("Time taken: %f seconds\n", end_time - start_time);
