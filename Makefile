@@ -8,8 +8,11 @@ EXEC=password_bf
 
 all: $(EXEC)
 
-$(EXEC):
+pass:
 	clang -pg -o password_bf password_bf.c -fopenmp -lomp -lcrypto -I/opt/homebrew/opt/openssl/include -L/opt/homebrew/opt/openssl/lib
+
+seq:
+	gcc -o seq seq.c -lcrypto -I/opt/homebrew/opt/openssl/include -L/opt/homebrew/opt/openssl/lib
 
 run:
 	./$(EXEC)

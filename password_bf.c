@@ -5,7 +5,6 @@
 #include <omp.h>
 #include <time.h>
 
-
 #define MAX 10
 
 
@@ -32,37 +31,48 @@ void iterate(byte * hash1, byte * hash2, char *str, int idx, int len, int *ok) {
     // 'ok' determines when the algorithm matches.
     if(*ok) return;
     if (idx < (len - 1)) {
-        
-        // Iterate for all letter combination.
-#pragma omp for num_threads(16) private(c)
-        for (c = 0; c < strlen(letters); ++c) {
-//#pragma omp task
-//            {
-                //printf("%s\n", str);
-            if (*ok == 1) {
-                c = 37;
-            }
-            str[idx] = letters[c];
-            // Recursive call
-            iterate(hash1, hash2, str, idx + 1, len, ok);
-       // }
-    }
+//#pragma omp parallel private(c) firstprivate(str,hash1, len, hash2) num_threads(60)
+    //    {
+            printf("thread: %d, len: %d, idx: %d, str: %s\n", omp_get_thread_num(), len, idx, str);
+            // Iterate for all letter combination.
+            for (c = 0; c < strlen(letters) /*&& *ok==0*/; ++c) {
+                
+                if (*ok == 1) {
+                    c = 37;
+                }
+                // printf("%s\n", str);
+                // Recursive call
+                
+                str[idx] = letters[c];
+                
+        //    #pragma omp task firstprivate(str, hash1, hash2, len, idx)
+           // {
+                iterate(hash1, hash2, str, idx + 1, len, ok);
+           // }
+                
+         //   }
+        }
     } else {
         // Include all last letters and compare the hashes.
-#pragma omp for num_threads(16) private(c)
-            for (c = 0; c < strlen(letters); ++c) {
+//#pragma omp for
+        for (c = 0; c < strlen(letters); ++c) {
                 if (*ok == 1) {
                     c = 37;
                 }
                 str[idx] = letters[c];
+//#pragma omp critical
+          //  {
                 MD5((byte *) str, strlen(str), hash2);
-                if (strncmp((char*)hash1, (char*)hash2, MD5_DIGEST_LENGTH) == 0) {
+                
+                if(strncmp((char*)hash1, (char*)hash2, MD5_DIGEST_LENGTH) == 0){
                     printf("found: %s\n", str);
-                    print_digest(hash2);
+                    printf("%d\n", strncmp((char*)hash1, (char*)hash2, MD5_DIGEST_LENGTH));
                     *ok = 1;
                 }
-            }
+          //  }
+
         }
+    }
 }
 
 /*
@@ -89,7 +99,6 @@ int main(int argc, char **argv) {
 
     // Input:
     r = scanf("%s", hash1_str);
-    printf("%s\n", hash1_str);
     // Check input.
     if (r == EOF || r == 0)
     {
@@ -99,19 +108,22 @@ int main(int argc, char **argv) {
 
     // Convert hexadecimal string to hash byte.
     strHex_to_byte(hash1_str, hash1);
-    print_digest(hash1);
-    printf("%d\n", MD5_DIGEST_LENGTH);
+
     memset(hash2, 0, MD5_DIGEST_LENGTH);
 
-    // Generate all possible passwords of different sizes.
-    
-    clock_t start_time = clock();
+    // Generate all possible passwords of different sizes
 
-    for(len = 1; len <= lenMax; len++){
-        printf("%d\n", len);
-        memset(str, 0, len+1);
-        iterate(hash1, hash2, str, 0, len, &ok);
+    clock_t start_time = clock();
+#pragma omp parallel firstprivate(len, str, hash1, hash2) num_threads(16)
+    {
+#pragma omp for
+        for(len = 1; len <= lenMax; len++){
+            memset(str, 0, len+1);
+            
+            iterate(hash1, hash2, str, 0, len, &ok);
+        }
     }
     clock_t end_time = clock();
     printf("Time taken: %f seconds\n", (double)(end_time - start_time) / CLOCKS_PER_SEC);
+
 }
