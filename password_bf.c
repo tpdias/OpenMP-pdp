@@ -39,7 +39,7 @@ void iterate(byte * hash1, byte * hash2, char *str, int idx, int len, int *ok) {
                      memcpy(local_str, str, MAX + 1);
 
                      local_str[idx] = letters[c];
-                     printf("thread: %d, len: %d, idx: %d, str: %s, c: %d, char: %c\n", omp_get_thread_num(), len, idx, local_str, c, local_str[idx]);
+                   //  printf("thread: %d, len: %d, idx: %d, str: %s, c: %d, char: %c\n", omp_get_thread_num(), len, idx, local_str, c, local_str[idx]);
             #pragma omp task firstprivate(local_str)
                 {
                      iterate(hash1, hash2, local_str, idx + 1, len, ok);
@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
     byte hash1[MD5_DIGEST_LENGTH]; // password hash
     byte hash2[MD5_DIGEST_LENGTH]; // string hashes
     
-    omp_set_num_threads(64);
+    omp_set_num_threads(16);
 
     // Input:
     r = scanf("%s", hash1_str);
