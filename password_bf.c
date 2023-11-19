@@ -31,27 +31,23 @@ void iterate(byte * hash1, byte * hash2, char *str, int idx, int len, int *ok) {
     // 'ok' determines when the algorithm matches.
     if(*ok) return;
     if (idx < (len - 1)) {
-//#pragma omp parallel private(c) firstprivate(str,hash1, len, hash2) num_threads(60)
-    //    {
-            printf("thread: %d, len: %d, idx: %d, str: %s\n", omp_get_thread_num(), len, idx, str);
             // Iterate for all letter combination.
             for (c = 0; c < strlen(letters) /*&& *ok==0*/; ++c) {
                 
                 if (*ok == 1) {
                     c = 37;
                 }
-                // printf("%s\n", str);
                 // Recursive call
                 
                 str[idx] = letters[c];
+                printf("thread: %d, len: %d, idx: %d, str: %s, c: %d, char: %c\n", omp_get_thread_num(), len, idx, str, c, str[idx]);
                 
-        //    #pragma omp task firstprivate(str, hash1, hash2, len, idx)
-           // {
+            #pragma omp task
+            {
                 iterate(hash1, hash2, str, idx + 1, len, ok);
-           // }
+            }
                 
-         //   }
-        }
+           }
     } else {
         // Include all last letters and compare the hashes.
 //#pragma omp for
@@ -59,18 +55,18 @@ void iterate(byte * hash1, byte * hash2, char *str, int idx, int len, int *ok) {
                 if (*ok == 1) {
                     c = 37;
                 }
+                byte curHash[MD5_DIGEST_LENGTH];
+                hash2 = curHash;
                 str[idx] = letters[c];
-//#pragma omp critical
-          //  {
                 MD5((byte *) str, strlen(str), hash2);
-                
-                if(strncmp((char*)hash1, (char*)hash2, MD5_DIGEST_LENGTH) == 0){
-                    printf("found: %s\n", str);
-                    printf("%d\n", strncmp((char*)hash1, (char*)hash2, MD5_DIGEST_LENGTH));
-                    *ok = 1;
-                }
-          //  }
 
+               // Compara hash1 com curHash
+               if (memcmp(hash1, hash2, MD5_DIGEST_LENGTH) == 0) {
+                   printf("found: %s\n", str);
+                   print_digest(hash2);
+                   *ok = 1;
+               }
+        
         }
     }
 }
@@ -90,6 +86,9 @@ void strHex_to_byte(char * str, byte * hash){
 
 int main(int argc, char **argv) {
     char str[MAX+1];
+    for (int i = 0; i < MAX + 1; i++) {
+        str[i] = '0';
+    }
     int lenMax = MAX;
     int len;
     int ok = 0, r;
