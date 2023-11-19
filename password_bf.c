@@ -33,25 +33,20 @@ void iterate(byte * hash1, byte * hash2, char *str, int idx, int len, int *ok) {
     if (idx < (len - 1)) {
 #pragma omp parallel num_threads(16) firstprivate(hash1, hash2, idx, len)
         {
-            char local_str[MAX+1];
-            memcpy(local_str, str, MAX+1);
             // Iterate for all letter combination.
-            for (c = 0; c < strlen(letters) /*&& *ok==0*/; ++c) {
-                
-                if (*ok == 1) {
-                    c = 37;
-                }
-                // Recursive call
-                
-#pragma omp task firstprivate(local_str)
-              {
-                local_str[idx] = letters[c];
-                printf("thread: %d, len: %d, idx: %d, str: %s, c: %d, char: %c\n", omp_get_thread_num(), len, idx, str, c, local_str[idx]);
- 
-                    iterate(hash1, hash2, str, idx + 1, len, ok);
+        for (c = 0; c < strlen(letters) && !(*ok); ++c) {
+                     char *local_str = (char *)malloc((MAX + 1) * sizeof(char));
+                     memcpy(local_str, str, MAX + 1);
+
+                     local_str[idx] = letters[c];
+                     printf("thread: %d, len: %d, idx: %d, str: %s, c: %d, char: %c\n", omp_get_thread_num(), len, idx, local_str, c, local_str[idx]);
+            #pragma omp task firstprivate(local_str)
+                {
+                     iterate(hash1, hash2, local_str, idx + 1, len, ok);
+                     free(local_str);
+                 }
               }
             }
-        }
     } else {
         // Include all last letters and compare the hashes.
         //#pragma omp for
@@ -67,7 +62,6 @@ void iterate(byte * hash1, byte * hash2, char *str, int idx, int len, int *ok) {
             // Compara hash1 com curHash
             if (memcmp(hash1, hash2, MD5_DIGEST_LENGTH) == 0) {
                 printf("found: %s\n", str);
-                print_digest(hash2);
                 *ok = 1;
             }
             
@@ -113,17 +107,17 @@ int main(int argc, char **argv) {
     
     // Generate all possible passwords of different sizes
     
-    clock_t start_time = clock();
-    //#pragma omp parallel firstprivate(len, hash1, hash2) num_threads(16)
-    //  {
-    //#pragma omp for
-    for(len = 1; len <= lenMax; len++){
-        
-        memset(str, 0, len+1);
-        iterate(hash1, hash2, str, 0, len, &ok);
-        //      }
-    }
-    clock_t end_time = clock();
-    printf("Time taken: %f seconds\n", (double)(end_time - start_time) / CLOCKS_PER_SEC);
+    double start_time = omp_get_wtime();
+   
+
+        for(len = 1; len <= lenMax; len++){
+            memset(str, 0, len+1);
+            iterate(hash1, hash2, str, 0, len, &ok);
+            
+        }
+    
+    
+    double end_time = omp_get_wtime();
+       printf("Time taken: %f seconds\n", end_time - start_time);
     
 }
