@@ -31,7 +31,7 @@ void iterate(byte * hash1, byte * hash2, char *str, int idx, int len, int *ok) {
     // 'ok' determines when the algorithm matches.
     if(*ok) return;
     if (idx < (len - 1)) {
-#pragma omp parallel num_threads(16) firstprivate(hash1, hash2, idx, len)
+#pragma omp parallel firstprivate(hash1, hash2, idx, len) shared(ok)
         {
             // Iterate for all letter combination.
         for (c = 0; c < strlen(letters) && !(*ok); ++c) {
@@ -91,6 +91,8 @@ int main(int argc, char **argv) {
     byte hash1[MD5_DIGEST_LENGTH]; // password hash
     byte hash2[MD5_DIGEST_LENGTH]; // string hashes
     
+    omp_set_num_threads(64);
+
     // Input:
     r = scanf("%s", hash1_str);
     // Check input.
