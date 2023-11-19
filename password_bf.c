@@ -42,10 +42,10 @@ void iterate(byte * hash1, byte * hash2, char *str, int idx, int len, int *ok) {
                 str[idx] = letters[c];
                 printf("thread: %d, len: %d, idx: %d, str: %s, c: %d, char: %c\n", omp_get_thread_num(), len, idx, str, c, str[idx]);
                 
-            #pragma omp task
-            {
+           // #pragma omp task
+          //  {
                 iterate(hash1, hash2, str, idx + 1, len, ok);
-            }
+        //    }
                 
            }
     } else {
@@ -112,7 +112,8 @@ int main(int argc, char **argv) {
 
     // Generate all possible passwords of different sizes
 
-    clock_t start_time = clock();
+     double start_time = omp_get_wtime();
+     
 #pragma omp parallel firstprivate(len, str, hash1, hash2) num_threads(16)
     {
 #pragma omp for
@@ -122,7 +123,8 @@ int main(int argc, char **argv) {
             iterate(hash1, hash2, str, 0, len, &ok);
         }
     }
-    clock_t end_time = clock();
-    printf("Time taken: %f seconds\n", (double)(end_time - start_time) / CLOCKS_PER_SEC);
+
+    double end_time = omp_get_wtime();
+    printf("Time taken: %f seconds\n", end_time - start_time);
 
 }
